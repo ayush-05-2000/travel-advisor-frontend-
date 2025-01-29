@@ -1,28 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { Box, TextField, Button, Typography, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError("");
-
-    try {
-      const response = await axios.post("http://127.0.0.1:8000/auth/login", formData);
-      localStorage.setItem("token", response.data.access_token); // Store token
-      navigate("/home"); // Redirect to dashboard page after successful login
-    } catch (err) {
-      setError("Invalid email or password. Please try again.");
-    }
+    navigate("/home"); // Navigate directly to home page
   };
 
   return (
@@ -78,12 +63,6 @@ const LoginPage = () => {
         <Typography variant="body1" mb={3} sx={{ opacity: 0.9 }}>
           Explore Nepal Like Never Before!
         </Typography>
-        
-        {error && (
-          <Typography color="error" mb={2}>
-            {error}
-          </Typography>
-        )}
 
         <TextField
           fullWidth
@@ -91,8 +70,6 @@ const LoginPage = () => {
           variant="outlined"
           margin="dense"
           name="email"
-          value={formData.email}
-          onChange={handleChange}
           InputProps={{ style: { color: "#fff" } }}
           sx={{
             "& .MuiOutlinedInput-root": {
@@ -112,8 +89,6 @@ const LoginPage = () => {
           variant="outlined"
           margin="dense"
           name="password"
-          value={formData.password}
-          onChange={handleChange}
           InputProps={{ style: { color: "#fff" } }}
           sx={{
             "& .MuiOutlinedInput-root": {

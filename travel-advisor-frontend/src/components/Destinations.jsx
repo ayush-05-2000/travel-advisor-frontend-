@@ -1,29 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Grid, Box, Typography, CircularProgress } from '@mui/material';
+import React from 'react';
+import { Container, Grid, Box, Typography } from '@mui/material';
 import DestinationCard from '../components/DestinationCard';
 import Navbar from './Navbar';
-import axios from 'axios';
+
+// Hardcoded Destinations Data
+const destinations = [
+    {
+        id: 1,
+        name: "Kathmandu",
+        country: "Nepal",
+        description: "Capital city of Nepal, rich in culture and heritage.",
+        best_season: "Spring & Autumn",
+        image: "/kathmandu.jpg"
+    },
+    {
+        id: 2,
+        name: "Pokhara",
+        country: "Nepal",
+        description: "A picturesque city known for its serene lakes, adventure sports, and stunning Himalayan views.",
+        best_season: "Spring & Autumn",
+        image: "/pokhara.jpg"
+    },
+    {
+        id: 3,
+        name: "Chitwan National Park",
+        country: "Nepal",
+        description: "A UNESCO World Heritage site famous for its rich biodiversity, jungle safaris, and the rare one-horned rhinoceros.",
+        best_season: "Winter & Spring",
+        image: "/chitwan.jpg"
+    },
+    {
+        id: 4,
+        name: "Lumbini",
+        country: "Nepal",
+        description: "The birthplace of Lord Buddha and an important pilgrimage site for Buddhists.",
+        best_season: "Autumn & Winter",
+        image: "/lumbini.jpg"
+    },
+    {
+        id: 5,
+        name: "Everest Base Camp",
+        country: "Nepal",
+        description: "One of the most famous trekking destinations in the world, offering breathtaking views of Mount Everest.",
+        best_season: "Spring & Autumn",
+        image: "/mount-everest.jpg"
+    },
+    {
+        id: 6,
+        name: "Bandipur",
+        country: "Nepal",
+        description: "A charming hilltop town with preserved Newari architecture and stunning mountain views.",
+        best_season: "Spring & Winter",
+        image: "/bandipur.jpg"
+    }
+];
 
 const DestinationsPage = () => {
-    const [destinations, setDestinations] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        const fetchDestinations = async () => {
-            try {
-                const response = await axios.get('http://127.0.0.1:8000/destinations/');
-                setDestinations(response.data);
-            } catch (err) {
-                setError('Failed to load destinations. Please try again.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDestinations();
-    }, []);
-
     return (
         <Box>
             <Navbar />
@@ -32,23 +64,13 @@ const DestinationsPage = () => {
                     Explore Our Top Destinations in Nepal
                 </Typography>
 
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : error ? (
-                    <Typography variant="h6" color="error" textAlign="center">
-                        {error}
-                    </Typography>
-                ) : (
-                    <Grid container spacing={4}>
-                        {destinations.map((destination) => (
-                            <Grid item xs={12} sm={6} md={4} key={destination.id}>
-                                <DestinationCard destination={destination} />
-                            </Grid>
-                        ))}
-                    </Grid>
-                )}
+                <Grid container spacing={4}>
+                    {destinations.map((destination) => (
+                        <Grid item xs={12} sm={6} md={4} key={destination.id}>
+                            <DestinationCard destination={destination} />
+                        </Grid>
+                    ))}
+                </Grid>
             </Container>
         </Box>
     );

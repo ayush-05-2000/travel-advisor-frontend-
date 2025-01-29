@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Container,
@@ -17,48 +17,72 @@ import {
 } from "@mui/material";
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from "@mui/lab";
 import Navbar from "../components/Navbar";
-import axios from "axios";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
+// Step Labels
 const steps = ["Select Destination", "Select Places", "Generate Itinerary"];
+
+// Hardcoded Destinations & Places
+const destinations = {
+  1: {
+    id: 1,
+    name: "Kathmandu",
+    description: "Capital city of Nepal, rich in culture and heritage.",
+    places: [
+      { id: "p1", name: "Swayambhunath Stupa" },
+      { id: "p2", name: "Pashupatinath Temple" },
+      { id: "p3", name: "Kathmandu Durbar Square" }
+    ]
+  },
+  2: {
+    id: 2,
+    name: "Pokhara",
+    description: "A picturesque city known for its serene lakes and adventure sports.",
+    places: [
+      { id: "p4", name: "Phewa Lake" },
+      { id: "p5", name: "Sarangkot" },
+      { id: "p6", name: "Davis Falls" }
+    ]
+  }
+};
+
+// Hardcoded Itinerary Data
+const itineraries = {
+  1: `
+    Day 1: Arrival in Kathmandu
+    - Visit Kathmandu Durbar Square
+    - Explore local street food
+    - Evening walk around Thamel
+
+    Day 2: Cultural Exploration
+    - Morning visit to Swayambhunath Stupa
+    - Afternoon at Pashupatinath Temple
+    - Relax at Garden of Dreams in the evening
+    `,
+  2: `
+    Day 1: Welcome to Pokhara
+    - Relax at Phewa Lake
+    - Explore Lakeside Market
+
+    Day 2: Adventure & Sightseeing
+    - Early morning sunrise at Sarangkot
+    - Visit Davis Falls
+    - Boating at Phewa Lake
+    `
+};
 
 const ItineraryPage = () => {
   const { destinationId } = useParams();
   const [activeStep, setActiveStep] = useState(0);
-  const [places, setPlaces] = useState([]);
   const [selectedPlaces, setSelectedPlaces] = useState([]);
-  const [destination, setDestination] = useState(null);
   const [budget, setBudget] = useState("");
   const [numPeople, setNumPeople] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [itinerary, setItinerary] = useState(null);
-  const [fetchingItinerary, setFetchingItinerary] = useState(false);
+  const [itinerary, setItinerary] = useState("");
 
-  useEffect(() => {
-    const fetchDestination = async () => {
-      try {
-        const response = await axios.get(`http://127.0.0.1:8000/destinations/${destinationId}`);
-        setDestination(response.data);
-        setPlaces(response.data.places || []);
-      } catch (err) {
-        setError("Failed to load destination details.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDestination();
-  }, [destinationId]);
-
-  // useEffect should be at the top level, NOT inside handleNext
-  useEffect(() => {
-    if (activeStep === 2) { // When Step 3 is active
-      console.log("Step 3 Active - Calling API...");
-      generateItinerary();
-    }
-  }, [activeStep]); // Runs whenever activeStep changes
+  // Get the destination details from hardcoded data
+  const destination = destinations[destinationId] || null;
+  const places = destination ? destination.places : [];
 
   const handleCheckboxChange = (place) => {
     setSelectedPlaces((prevSelected) =>
@@ -68,68 +92,25 @@ const ItineraryPage = () => {
     );
   };
 
-  const handleNext = async () => {
-    console.log("Next button clicked. Active Step:", activeStep);
-
+  const handleNext = () => {
     if (activeStep === 0 && (!budget || !numPeople)) {
       alert("Please enter budget and number of people.");
       return;
     }
-
     if (activeStep === 1 && selectedPlaces.length === 0) {
       alert("Please select at least one place.");
       return;
     }
 
-
-
     setActiveStep((prev) => prev + 1);
+
+    if (activeStep === 1) {
+      // Hardcoded itinerary for Step 3
+      setItinerary(itineraries[destinationId] || "No itinerary available.");
+    }
   };
 
-
   const handleBack = () => setActiveStep((prev) => prev - 1);
-
-  const generateItinerary = async () => {
-    console.log("Generating itinerary...");
-    setFetchingItinerary(true);
-
-    const payload = selectedPlaces.map(place => place.name);
-
-    try {
-        const response = await fetch(
-            `http://127.0.0.1:8000/itineraries/generate-ai-itinerary/?budget=${budget}&num_people=${numPeople}`,
-            {
-                method: "POST",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            }
-        );
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log("Generated Itinerary:", data);
-
-        setItinerary(data.itinerary);
-    } catch (error) {
-        console.error("Error generating itinerary:", error);
-    } finally {
-        setFetchingItinerary(false); // Stop loading after receiving response
-    }
-};
-
-
-
-
-
-
-
 
   const downloadPDF = () => {
     const pdfElement = document.getElementById("itinerary-content");
@@ -142,9 +123,6 @@ const ItineraryPage = () => {
   };
 
   const renderStepContent = (step) => {
-    if (loading) return <CircularProgress />;
-    if (error) return <Typography color="error">{error}</Typography>;
-
     switch (step) {
       case 0:
         return (
@@ -152,11 +130,7 @@ const ItineraryPage = () => {
             <Typography variant="h6" mb={2}>
               Selected Destination: <strong>{destination?.name}</strong>
             </Typography>
-            <Typography variant="body1">
-              {typeof destination?.description === "string"
-                ? destination.description
-                : JSON.stringify(destination?.description)}
-            </Typography>
+            <Typography variant="body1">{destination?.description}</Typography>
             <Box sx={{ mt: 3 }}>
               <TextField
                 label="Budget"
@@ -192,13 +166,9 @@ const ItineraryPage = () => {
             </FormGroup>
           </Box>
         );
+
       case 2:
-        return fetchingItinerary ? (
-          <Box textAlign="center">
-            <CircularProgress />
-            <Typography variant="body1">Generating Itinerary...</Typography>
-          </Box>
-        ) : itinerary ? (
+        return itinerary ? (
           <Box textAlign="center" id="itinerary-content">
             <Typography variant="h6" mb={2}>
               Proposed Itinerary
@@ -213,13 +183,18 @@ const ItineraryPage = () => {
                       {index < itinerary.length - 1 && <TimelineConnector />}
                     </TimelineSeparator>
                     <TimelineContent>
-                      <Typography variant="h6" fontWeight="bold">{dayTitle}</Typography>
-                      {activities.map((activity, i) => (
-                        <Typography key={i} variant="body2" sx={{ ml: 2 }}>
-                          {activity}
-                        </Typography>
-                      ))}
+                      <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "1.1rem" }}>
+                        {dayTitle.trim()}
+                      </Typography>
+                      <Box component="ul" sx={{ pl: 2, mt: 1 }}>
+                        {activities.map((activity, i) => (
+                          <Typography key={i} component="li" variant="body2" sx={{ fontSize: "1rem" }}>
+                            {activity.trim()}
+                          </Typography>
+                        ))}
+                      </Box>
                     </TimelineContent>
+
                   </TimelineItem>
                 );
               })}
@@ -231,6 +206,7 @@ const ItineraryPage = () => {
         ) : (
           <Typography color="error">No itinerary available.</Typography>
         );
+
       default:
         return null;
     }
